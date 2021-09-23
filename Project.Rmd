@@ -1,0 +1,457 @@
+---
+title: "Project EXST 7152"
+author: "Seyedeh Shaghayegh Rabbanian and Saber Nemati"
+date: "3/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+cbm17 <- read.csv("C:/Users/srabba2/OneDrive - Louisiana State University/STAT 7152/Project/cbm17.csv",header=TRUE)
+cbm15 <- read.csv("C:/Users/srabba2/OneDrive - Louisiana State University/STAT 7152/Project/cbm15.csv",header=TRUE)
+cbm14 <- read.csv("C:/Users/srabba2/OneDrive - Louisiana State University/STAT 7152/Project/cbm14.csv",header=TRUE)
+
+
+
+dim(cbm)
+summary(cbm17)
+names(cbm17)
+correlationmatrix17 <- cor(cbm17[1:16])
+correlationmatrix17 
+
+library(corrplot)
+Cl=cor(cbm17,use="complete.obs")
+corrplot(Cl,method="ellipse")
+```
+pairs(cbm)
+
+```{r}
+sum(is.na(cbm))
+cbm=na.omit(cbm)
+dim(cbm)
+```
+
+We do not have any missing values.
+
+**Train and Test cbm 17**
+```{r}
+set.seed(1)
+indx17=sample (1: nrow(cbm17), size=0.7*nrow(cbm17))
+train17 = cbm17[indx17,]
+test17 = cbm17[-indx17,]
+```
+
+**Linear regression model cbm 17**
+```{r}
+linearmodel17 <- lm(decaystate~.,data=train17)
+linearmodel17.pred <- predict(linearmodel17,test17)
+MSE17 <- mean((linearmodel17.pred -test17$decaystate)^2)
+MSE17
+
+linearmodel17$coefficients
+
+
+library(car)
+vif(linearmodel17)
+
+```
+**Train and Test cbm 15**
+```{r}
+set.seed(1)
+indx15=sample (1: nrow(cbm15), size=0.7*nrow(cbm15))
+train15 = cbm15[indx15,]
+test15 = cbm15[-indx15,]
+```
+
+**Linear regression model cbm 15**
+```{r}
+linearmodel15 <- lm(decaystate~.,data=train15)
+linearmodel15.pred <- predict(linearmodel15,test15)
+MSE15 <- mean((linearmodel15.pred -test15$decaystate)^2)
+MSE15
+```
+
+**Train and Test cbm 14**
+```{r}
+set.seed(1)
+indx14=sample (1: nrow(cbm14), size=0.7*nrow(cbm14))
+train14 = cbm14[indx14,]
+test14 = cbm14[-indx14,]
+```
+
+**Linear regression model cbm 14**
+```{r}
+linearmodel14 <- lm(decaystate~.,data=train14)
+linearmodel14.pred <- predict(linearmodel14,test14)
+MSE14 <- mean((linearmodel14.pred -test14$decaystate)^2)
+MSE14
+
+library(car)
+vif(linearmodel14)
+```
+
+
+
+
+
+
+
+
+
+
+
+**Best subset selection 17**
+```{r}
+library(leaps)
+set.seed(1)
+train17_x<-model.matrix (decaystate~.,train17)[,-1]
+train17_y<-train17$decaystate
+test17_x<-model.matrix (decaystate~.,test17)[,-1]
+test17_y<-test17$decaystate
+regfit17.full=regsubsets(decaystate~.,train17,nvmax=16)
+reg17.summary =summary (regfit17.full)
+reg17.summary
+```
+
+names(reg17.summary)
+reg17.summary$rsq
+
+par(mfrow=c(2,2))
+plot(reg17.summary$rss ,xlab="Number of Variables ",ylab="RSS", type="l")
+plot(reg17.summary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
+which.max(reg17.summary$adjr2)
+
+points (13,reg17.summary$adjr2[13], col="red",cex=2,pch=20)
+plot(reg17.summary$cp ,xlab="Number of Variables ",ylab="cp", type="l")
+which.min(reg17.summary$cp )
+
+points (13,reg.summary$cp [13],col="red",cex=2,pch=20)
+plot(reg17.summary$bic ,xlab="Number of Variables ",ylab="bic", type="l")
+which.min(reg17.summary$bic )
+
+points(13,reg17.summary$bic [13],col="red",cex=2,pch =20)
+
+coef(regfit17.full ,13)
+```
+
+**Best subset selection using cross-validation 17**
+```{r}
+set.seed(1)
+regfit17.bestcv=regsubsets(decaystate~.,train17,nvmax=16)
+test17.mat=model.matrix(decaystate~.,data=test17)
+val17.errors=rep(NA,16)
+for(i in 1:16){
+i
+coefi=coef(regfit17.bestcv,id=i)
+predcv17=test17.mat[,names(coefi)]%*%coefi
+val17.errors[i]=mean((test17_y-predcv17)^2)
+}
+val17.errors
+
+```
+
+
+
+**Best subset selection 15 cross-validation 15**
+```{r}
+library(leaps)
+set.seed(1)
+train_x<-model.matrix (decaystate~.,train)[,-1]
+train_y<-train$decaystate
+test_x<-model.matrix (decaystate~.,test)[,-1]
+test_y<-test$decaystate
+regfit.full=regsubsets(decaystate~.,train,nvmax=14)
+reg.summary =summary (regfit.full)
+reg.summary
+```
+
+```{r}
+names(reg.summary)
+reg.summary$rsq
+
+par(mfrow=c(2,2))
+plot(reg.summary$rss ,xlab="Number of Variables ",ylab="RSS", type="l")
+plot(reg.summary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
+which.max(reg.summary$adjr2)
+
+points (13,reg.summary$adjr2[13], col="red",cex=2,pch=20)
+plot(reg.summary$cp ,xlab="Number of Variables ",ylab="cp", type="l")
+which.min(reg.summary$cp )
+
+points (13,reg.summary$cp [13],col="red",cex=2,pch=20)
+plot(reg.summary$bic ,xlab="Number of Variables ",ylab="bic", type="l")
+which.min(reg.summary$bic )
+
+points(13,reg.summary$bic [13],col="red",cex=2,pch =20)
+
+coef(regfit.full ,13)
+```
+
+**Best subset selection using cross-validation 14**
+```{r}
+set.seed(1)
+regfit.bestcv=regsubsets(decaystate~.,train,nvmax=14)
+test.mat=model.matrix(decaystate~.,data=test)
+val.errors=rep(NA,13)
+for(i in 1:13){
+coefi=coef(regfit.bestcv,id=i)
+predcv=test.mat[,names(coefi)]%*%coefi
+val.errors[i]=mean((test_y-predcv)^2)
+}
+val.errors
+```
+
+
+
+
+**Best subset selection 17**
+```{r}
+library(leaps)
+set.seed(1)
+train_x<-model.matrix (decaystate~.,train)[,-1]
+train_y<-train$decaystate
+test_x<-model.matrix (decaystate~.,test)[,-1]
+test_y<-test$decaystate
+regfit.full=regsubsets(decaystate~.,train,nvmax=14)
+reg.summary =summary (regfit.full)
+reg.summary
+```
+
+```{r}
+names(reg.summary)
+reg.summary$rsq
+
+par(mfrow=c(2,2))
+plot(reg.summary$rss ,xlab="Number of Variables ",ylab="RSS", type="l")
+plot(reg.summary$adjr2 ,xlab="Number of Variables ", ylab="Adjusted RSq",type="l")
+which.max(reg.summary$adjr2)
+
+points (13,reg.summary$adjr2[13], col="red",cex=2,pch=20)
+plot(reg.summary$cp ,xlab="Number of Variables ",ylab="cp", type="l")
+which.min(reg.summary$cp )
+
+points (13,reg.summary$cp [13],col="red",cex=2,pch=20)
+plot(reg.summary$bic ,xlab="Number of Variables ",ylab="bic", type="l")
+which.min(reg.summary$bic )
+
+points(13,reg.summary$bic [13],col="red",cex=2,pch =20)
+
+coef(regfit.full ,13)
+```
+
+**Best subset selection using cross-validation 17**
+```{r}
+set.seed(1)
+regfit.bestcv=regsubsets(decaystate~.,train,nvmax=14)
+test.mat=model.matrix(decaystate~.,data=test)
+val.errors=rep(NA,13)
+for(i in 1:13){
+coefi=coef(regfit.bestcv,id=i)
+predcv=test.mat[,names(coefi)]%*%coefi
+val.errors[i]=mean((test_y-predcv)^2)
+}
+val.errors
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**RIDGE**
+```{r}
+set.seed(1)
+library(glmnet)
+train17_x<-model.matrix (decaystate~.,train17)[,-1]
+train17_y<-train$decaystate
+test17_x<-model.matrix (decaystate~.,test17)[,-1]
+test17_y<-test17$decaystate
+cv17.out<-cv.glmnet(train17_x,train17_y,alpha=0)
+plot(cv17.out)
+bestlam17=cv17.out$lambda.min
+bestlam17
+ridge17.mod=glmnet(train17_x,train17_y,alpha=0,lambda=bestlam17)
+ridge17.pred=predict (ridge17.mod,s=bestlam17 ,newx=test17_x)
+RidgeMSE17=mean((ridge17.pred-test17_y)^2)
+RidgeMSE17
+ridge17.mod$beta
+```
+
+```{r}
+set.seed(1)
+library(glmnet)
+train15_x<-model.matrix (decaystate~.,train15)[,-1]
+train15_y<-train$decaystate
+test15_x<-model.matrix (decaystate~.,test15)[,-1]
+test15_y<-test15$decaystate
+cv15.out<-cv.glmnet(train15_x,train15_y,alpha=0)
+plot(cv15.out)
+bestlam15=cv15.out$lambda.min
+bestlam15
+ridge15.mod=glmnet(train15_x,train15_y,alpha=0,lambda=bestlam15)
+ridge15.pred=predict (ridge15.mod,s=bestlam15 ,newx=test15_x)
+RidgeMSE15=mean((ridge15.pred-test15_y)^2)
+RidgeMSE15
+ridge15.mod$beta
+```
+
+```{r}
+set.seed(1)
+library(glmnet)
+train14_x<-model.matrix (decaystate~.,train14)[,-1]
+train14_y<-train$decaystate
+test14_x<-model.matrix (decaystate~.,test14)[,-1]
+test14_y<-test14$decaystate
+cv14.out<-cv.glmnet(train14_x,train14_y,alpha=0)
+plot(cv14.out)
+bestlam14=cv14.out$lambda.min
+bestlam14
+ridge14.mod=glmnet(train14_x,train14_y,alpha=0,lambda=bestlam14)
+ridge14.pred=predict (ridge14.mod,s=bestlam14 ,newx=test14_x)
+RidgeMSE14=mean((ridge14.pred-test14_y)^2)
+RidgeMSE14
+ridge14.mod$beta
+```
+
+**LASSO**
+```{r}
+set.seed(1)
+cv17.out.lasso<-cv.glmnet(train17_x,train17_y,alpha=1)
+plot(cv17.out.lasso)
+bestlamlasso17=cv17.out.lasso$lambda.min
+bestlamlasso17
+lasso17.mod=glmnet(train17_x,train17_y,alpha=1,lambda=bestlamlasso17)
+lasso17.pred=predict(lasso17.mod,s=bestlamlasso17 ,newx=test17_x)
+LassoMSE17=mean((lasso17.pred-test17_y)^2)
+LassoMSE17
+names(lasso17.mod)
+
+plot(lasso17.mod$beta)
+
+plot(cv17.out.lasso,xvar="lambda")
+```
+
+
+
+**ELASTIC NET**
+
+
+```{r}
+library(glmnet)
+alpha=seq(from=0,to=1,by=0.1)
+
+min.cv=rep(0,11)
+for (i in 1:11){
+set.seed(1)
+cv.fit=cv.glmnet(train17_x,train17_y,alpha=alpha[i],nfolds=10)
+min.cv[i]=min(cv.fit$cvm)
+min.cv[i]
+}
+
+bestalpha17=alpha[which.min(min.cv)]
+bestalpha17
+
+plot(alpha,min.cv,type="b",xlab="alpha",ylab="cv error")
+
+elastic17.mod=glmnet(train17_x,train17_y,alpha=bestalpha17)
+
+lambda.min=min(elastic17.mod$lambda)
+lambda.min
+elastic17.pred=predict(elastic17.mod,newx=test17_x,s=lambda.min)
+
+
+elastic17.mod$beta[,100]
+
+ElasticMSE17=mean((elastic17.pred-test17_y)^2)
+ElasticMSE17
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Tree**
+```{r}
+library(rpart)
+set.seed(1)
+fit1<-rpart(decaystate~., control=rpart.control(xval=10,minsplit=100,cp=0),data=train17)
+
+fit1
+ind17=which.min(fit1$cptable[,"xerror"])
+ind17
+fit1$cptable[ind17,"xerror"]
+fit1$cptable[ind17,"xstd"]
+out=fit1$cptable[ind17,"xerror"]+fit1$cptable[ind17,"xstd"]
+out
+
+print(fit1$cptable)
+
+fit2<-prune(fit1,cp=3.050454e-04)
+
+
+fit2
+
+par(mar=c(1,1,1,1),xpd=NA)
+plot(fit2,uniform=F)
+text(fit2,use.n=TRUE)
+
+tree.pred <- predict(fit2,test17)
+
+
+MSE <- mean((tree.pred -test17$decaystate)^2)
+MSE
+
+
+```
+
+**Compare coefficients**
+```{r}
+par(mfrow=c(2,3))
+plot(linearmodel17$coefficients[2:17] ,xlab="Predictor index ",ylab="OLS Beta", type="l")
+
+plot(ridge17.mod$beta ,xlab="Predictor index ",ylab="Ridge Beta", type="l")
+
+plot(lasso17.mod$beta ,xlab="Predictor index ",ylab="LASSO Beta", type="l")
+
+
+
+```
+
